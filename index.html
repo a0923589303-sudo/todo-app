@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="待辦助理">
+<meta name="theme-color" content="#1a2332">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+<link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>待辦助理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #f0f2f7;
+    --card: #ffffff;
+    --navy: #1a2332;
+    --navy-light: #2d3f57;
+    --coral: #ff6b4a;
+    --coral-light: #fff0ec;
+    --text: #1a2332;
+    --sub: #7a8499;
+    --border: #e4e8f0;
+    --cat-work: #3b82f6;
+    --cat-medical: #22c55e;
+    --cat-shop: #a855f7;
+    --cat-love: #f43f5e;
+    --cat-other: #f59e0b;
+    --shadow: 0 2px 12px rgba(26,35,50,0.08);
+    --shadow-lg: 0 8px 30px rgba(26,35,50,0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 20px 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .app-title { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+  .app-title span { color: var(--coral); }
+  .line-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: #06c755; border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .line-badge:hover { opacity: 0.85; }
+  .line-badge svg { width: 16px; height: 16px; }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; gap: 0;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+  }
+  .tab-btn {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    padding: 10px 16px; font-size: 14px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    font-family: inherit; transition: all 0.2s;
+  }
+  .tab-btn.active { color: white; border-bottom-color: var(--coral); }
+
+  /* MAIN */
+  main { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .cat-pill {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--card); font-size: 12px; cursor: pointer;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .cat-pill.active, .cat-pill:hover { color: white; border-color: transparent; }
+  .cat-pill[data-cat="all"].active { background: var(--navy); }
+  .cat-pill[data-cat="work"].active { background: var(--cat-work); }
+  .cat-pill[data-cat="medical"].active { background: var(--cat-medical); }
+  .cat-pill[data-cat="shop"].active { background: var(--cat-shop); }
+  .cat-pill[data-cat="love"].active { background: var(--cat-love); }
+  .cat-pill[data-cat="other"].active { background: var(--cat-other); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--card); border-radius: 14px; padding: 14px 12px;
+    box-shadow: var(--shadow); text-align: center;
+  }
+  .stat-num { font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--sub); margin-top: 2px; }
+  .stat-card.urgent .stat-num { color: var(--coral); }
+  .stat-card.done .stat-num { color: var(--cat-medical); }
+
+  /* TODO CARD */
+  .todo-card {
+    background: var(--card); border-radius: 16px; padding: 16px;
+    box-shadow: var(--shadow); margin-bottom: 10px;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .todo-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .todo-card.done-item { opacity: 0.55; }
+  .cat-strip {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px;
+  }
+  .todo-card-inner { padding-left: 8px; }
+  .todo-top { display: flex; align-items: flex-start; gap: 10px; }
+  .check-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+    background: none; cursor: pointer; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .check-btn.checked { background: var(--cat-medical); border-color: var(--cat-medical); }
+  .check-btn.checked::after { content: '✓'; color: white; font-size: 12px; }
+  .todo-info { flex: 1; }
+  .todo-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .todo-title.striked { text-decoration: line-through; color: var(--sub); }
+  .todo-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .meta-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .meta-tag.cat { color: white; }
+  .meta-tag.date { background: var(--bg); color: var(--sub); }
+  .meta-tag.overdue { background: #fef2f2; color: #ef4444; }
+  .meta-tag.remind { background: #fffbeb; color: #d97706; }
+  .meta-tag.repeat { background: #eff6ff; color: #3b82f6; }
+  .todo-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .act-btn {
+    background: var(--bg); border: none; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; cursor: pointer;
+    font-family: inherit; color: var(--sub); transition: all 0.15s;
+  }
+  .act-btn:hover { background: var(--border); color: var(--text); }
+  .act-btn.del:hover { background: #fef2f2; color: #ef4444; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 48px 20px;
+    color: var(--sub); font-size: 14px;
+  }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 28px; right: 20px;
+    width: 56px; height: 56px; border-radius: 28px;
+    background: var(--coral); color: white; border: none;
+    font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(255,107,74,0.4);
+    transition: all 0.2s; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(255,107,74,0.5); }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(26,35,50,0.5);
+    z-index: 300; display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border-radius: 24px 24px 0 0;
+    padding: 20px; width: 100%; max-width: 640px;
+    max-height: 90vh; overflow-y: auto;
+    transform: translateY(30px); transition: transform 0.25s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; }
+  .close-btn {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--bg);
+    border: none; font-size: 16px; cursor: pointer; color: var(--sub);
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--sub); margin-bottom: 6px; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 14px; font-family: inherit;
+    background: var(--bg); color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--coral); background: white; }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .cat-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cat-opt {
+    padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: none; font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .cat-opt.sel { color: white; border-color: transparent; }
+  .cat-opt[data-c="work"].sel { background: var(--cat-work); }
+  .cat-opt[data-c="medical"].sel { background: var(--cat-medical); }
+  .cat-opt[data-c="shop"].sel { background: var(--cat-shop); }
+  .cat-opt[data-c="love"].sel { background: var(--cat-love); }
+  .cat-opt[data-c="other"].sel { background: var(--cat-other); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; background: var(--bg); border-radius: 10px;
+  }
+  .toggle-label { font-size: 14px; }
+  .toggle {
+    width: 44px; height: 24px; background: var(--border); border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle.on { background: var(--coral); }
+  .toggle::after {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    background: white; border-radius: 50%; top: 3px; left: 3px;
+    transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { left: 23px; }
+
+  .repeat-options {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+  .rep-opt {
+    padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: none; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .rep-opt.sel { background: var(--navy); color: white; border-color: var(--navy); }
+
+  .save-btn {
+    width: 100%; padding: 14px; background: var(--coral); color: white;
+    border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: all 0.2s; margin-top: 8px;
+  }
+  .save-btn:hover { background: #ff5533; }
+
+  /* LINE MODAL */
+  .line-modal-body { padding: 4px 0; }
+  .setup-step {
+    display: flex; gap: 14px; margin-bottom: 20px; align-items: flex-start;
+  }
+  .step-num {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--navy);
+    color: white; font-weight: 700; font-size: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .step-content p { font-size: 13px; color: var(--sub); line-height: 1.6; }
+  .code-box {
+    background: var(--navy); color: #7dd3fc; font-family: monospace;
+    font-size: 12px; padding: 10px 14px; border-radius: 8px; margin-top: 6px;
+    word-break: break-all; position: relative;
+  }
+  .copy-btn {
+    position: absolute; right: 8px; top: 8px; background: rgba(255,255,255,0.1);
+    border: none; color: white; font-size: 11px; padding: 3px 8px;
+    border-radius: 5px; cursor: pointer;
+  }
+  .line-token-input {
+    margin-top: 16px; display: flex; gap: 8px;
+  }
+  .line-token-input input { flex: 1; }
+  .connect-btn {
+    padding: 10px 16px; background: #06c755; color: white; border: none;
+    border-radius: 10px; font-size: 14px; cursor: pointer; font-family: inherit;
+    white-space: nowrap; font-weight: 500;
+  }
+
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 20px 0 10px;
+  }
+
+  /* HISTORY TAB */
+  .hist-item {
+    background: var(--card); border-radius: 12px; padding: 14px;
+    margin-bottom: 8px; display: flex; gap: 12px; align-items: center;
+    box-shadow: var(--shadow);
+  }
+  .hist-icon { font-size: 22px; }
+  .hist-info { flex: 1; }
+  .hist-title { font-size: 14px; font-weight: 500; }
+  .hist-time { font-size: 12px; color: var(--sub); }
+
+  @media (max-width: 380px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .stat-num { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="app-title">待辦<span>助理</span></div>
+    <button class="line-badge" id="lineSetupBtn">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      LINE 通知
+    </button>
+  </div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-tab="todos">待辦清單</button>
+    <button class="tab-btn" data-tab="today">今日</button>
+    <button class="tab-btn" data-tab="history">完成紀錄</button>
+  </div>
+</header>
+
+<main>
+  <!-- TODOS TAB -->
+  <div id="tab-todos">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">全部待辦</div>
+      </div>
+      <div class="stat-card urgent">
+        <div class="stat-num" id="statUrgent">0</div>
+        <div class="stat-label">即將到期</div>
+      </div>
+      <div class="stat-card done">
+        <div class="stat-num" id="statDone">0</div>
+        <div class="stat-label">今日完成</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="cat-pill active" data-cat="all">全部</button>
+      <button class="cat-pill" data-cat="work">💼 工作</button>
+      <button class="cat-pill" data-cat="medical">🏥 看診</button>
+      <button class="cat-pill" data-cat="shop">🛒 購物</button>
+      <button class="cat-pill" data-cat="love">💕 感情</button>
+      <button class="cat-pill" data-cat="other">✨ 其他</button>
+    </div>
+
+    <div id="todoList"></div>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div id="tab-today" style="display:none">
+    <div class="section-title">今天到期 / 提醒</div>
+    <div id="todayList"></div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none">
+    <div class="section-title">已完成</div>
+    <div id="historyList"></div>
+  </div>
+</main>
+
+<button class="fab" id="addBtn">＋</button>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">新增待辦</div>
+      <button class="close-btn" id="closeModal">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label>事項名稱 *</label>
+      <input type="text" id="fTitle" placeholder="輸入待辦事項...">
+    </div>
+
+    <div class="form-group">
+      <label>備註</label>
+      <textarea id="fNote" placeholder="補充說明（選填）"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>分類</label>
+      <div class="cat-selector">
+        <button class="cat-opt sel" data-c="work">💼 工作</button>
+        <button class="cat-opt" data-c="medical">🏥 看診</button>
+        <button class="cat-opt" data-c="shop">🛒 購物</button>
+        <button class="cat-opt" data-c="love">💕 感情</button>
+        <button class="cat-opt" data-c="other">✨ 其他</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>到期日</label>
+      <input type="date" id="fDue">
+    </div>
+
+    <div class="form-group">
+      <div class="toggle-row">
+        <span class="toggle-label">📅 固定排程（每幾天重複）</span>
+        <div class="toggle" id="toggleRepeat"></div>
+      </div>
+      <div id="repeatOpts" style="display:none; margin-top:10px;">
+        <label style="margin-bottom:8px;">每隔幾天重複</label>
+        <div class="repeat-options">
+          <button class="rep-opt" data-days="1">每天</button>
+          <button class="rep-opt sel" data-days="3">每3天</button>
+          <button class="rep-opt" data-days="7">每週</button>
+          <button class="rep-opt" data-days="14">每兩週</button>
+          <button class="rep-opt" data-days="30">每月</button>
+          <button class="rep-opt" data-days="custom">自訂</button>
+        </div>
+        <input type="number" id="fCustomDays" placeholder="自訂天數" min="1"
+          style="display:none; margin-top:8px; width:140px;">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="toggle-row">
+        <span class="toggle-label">🔔 提醒（LINE 通知）</span>
+        <div class="toggle" id="toggleRemind"></div>
+      </div>
+      <div id="remindOpts" style="display:none; margin-top:10px;">
+        <label>提前幾天提醒</label>
+        <div class="repeat-options">
+          <button class="rep-opt sel" data-before="0">當天</button>
+          <button class="rep-opt" data-before="1">前1天</button>
+          <button class="rep-opt" data-before="3">前3天</button>
+          <button class="rep-opt" data-before="7">前1週</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveBtn">儲存</button>
+  </div>
+</div>
+
+<!-- LINE SETUP MODAL -->
+<div class="modal-overlay" id="lineModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">LINE 通知設定</div>
+      <button class="close-btn" id="closeLineModal">✕</button>
+    </div>
+    <div class="line-modal-body">
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>加待辦助理 Bot 為好友</h4>
+          <p>點下方連結或掃 QR code 加入好友</p>
+          <div class="code-box">
+            <span id="lineAddFriendUrl">https://line.me/R/ti/p/@你的BotID</span>
+            <button class="copy-btn" onclick="copyText(document.getElementById('lineAddFriendUrl').textContent)">複製</button>
+          </div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>產生綁定碼</h4>
+          <p>按下方「產生綁定碼」按鈕，會出現一組 6 位數字</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>把綁定碼傳給 Bot</h4>
+          <p>回到 LINE 聊天視窗，把 6 位數字傳送給待辦助理 Bot</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>回來檢查連結狀態</h4>
+          <p>Bot 回覆「綁定成功」後，按下方「檢查連結狀態」完成設定</p>
+        </div>
+      </div>
+
+      <div id="bindCodeBox" style="display:none; text-align:center; margin:16px 0;">
+        <div style="font-size:32px; font-weight:700; letter-spacing:0.1em; color:var(--navy);" id="bindCodeText">------</div>
+        <div style="font-size:12px; color:var(--sub); margin-top:4px;">10 分鐘內有效</div>
+      </div>
+
+      <div class="line-token-input">
+        <button class="connect-btn" id="genCodeBtn" style="flex:1;">產生綁定碼</button>
+        <button class="connect-btn" id="checkBindBtn" style="flex:1; background:var(--navy); display:none;">檢查連結狀態</button>
+      </div>
+      <div id="lineStatus" style="margin-top:12px; font-size:13px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────
+// 部署 Cloudflare Worker 後，把下面兩個網址換成你自己的
+const WORKER_URL = 'https://todo-line-bot.a0923-todo.workers.dev';
+const LINE_ADD_FRIEND_URL = 'https://line.me/R/ti/p/@268mcsdh';
+
+// ── STATE ──────────────────────────────────────────
+let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+let history = JSON.parse(localStorage.getItem('history') || '[]');
+let lineSession = localStorage.getItem('lineSession') || '';
+let pendingBindCode = '';
+let editId = null;
+let currentFilter = 'all';
+let currentTab = 'todos';
+
+const CAT_META = {
+  work:    { label:'💼 工作', color:'var(--cat-work)' },
+  medical: { label:'🏥 看診', color:'var(--cat-medical)' },
+  shop:    { label:'🛒 購物', color:'var(--cat-shop)' },
+  love:    { label:'💕 感情', color:'var(--cat-love)' },
+  other:   { label:'✨ 其他', color:'var(--cat-other)' },
+};
+
+// ── HELPERS ────────────────────────────────────────
+function save() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+  localStorage.setItem('history', JSON.stringify(history));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function daysUntil(d) {
+  const diff = new Date(d) - new Date(today());
+  return Math.ceil(diff / 86400000);
+}
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${m}/${day}`;
+}
+
+// ── LINE BOT ───────────────────────────────────────
+async function sendLine(message) {
+  if (!lineSession) return;
+  try {
+    await fetch(`${WORKER_URL}/push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionToken: lineSession, message })
+    });
+  } catch(e) { console.warn('LINE push failed', e); }
+}
+
+function checkReminders() {
+  const t = today();
+  todos.filter(td => !td.done && td.remind && td.due).forEach(td => {
+    const days = daysUntil(td.due);
+    const notifyDays = td.remindBefore ?? 0;
+    const key = `notified_${td.id}_${td.due}`;
+    if (days === notifyDays && !localStorage.getItem(key)) {
+      const msg = days === 0
+        ? `\n⏰ 【待辦提醒】\n「${td.title}」今天到期！\n分類：${CAT_META[td.cat]?.label}\n記得完成喔！`
+        : `\n📅 【待辦提醒】\n「${td.title}」還有 ${days} 天到期\n分類：${CAT_META[td.cat]?.label}\n到期日：${formatDate(td.due)}`;
+      sendLine(msg);
+      localStorage.setItem(key, '1');
+    }
+  });
+}
+
+// ── RENDER ─────────────────────────────────────────
+function renderAll() {
+  renderStats();
+  renderTodos();
+  renderToday();
+  renderHistory();
+}
+
+function renderStats() {
+  const active = todos.filter(t => !t.done);
+  const urgent = active.filter(t => t.due && daysUntil(t.due) <= 3 && daysUntil(t.due) >= 0);
+  const doneToday = history.filter(h => h.completedAt?.startsWith(today()));
+  document.getElementById('statTotal').textContent = active.length;
+  document.getElementById('statUrgent').textContent = urgent.length;
+  document.getElementById('statDone').textContent = doneToday.length;
+}
+
+function renderTodos() {
+  const list = document.getElementById('todoList');
+  let items = todos.filter(t => !t.done);
+  if (currentFilter !== 'all') items = items.filter(t => t.cat === currentFilter);
+  items.sort((a,b) => {
+    if (a.due && b.due) return a.due.localeCompare(b.due);
+    if (a.due) return -1; if (b.due) return 1;
+    return 0;
+  });
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">🎉</div><div>沒有待辦事項！</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(t => todoCard(t)).join('');
+}
+
+function todoCard(t) {
+  const cm = CAT_META[t.cat] || CAT_META.other;
+  const days = t.due ? daysUntil(t.due) : null;
+  const isOverdue = days !== null && days < 0;
+  const isUrgent = days !== null && days >= 0 && days <= 3;
+
+  let dateBadge = '';
+  if (t.due) {
+    const label = days === 0 ? '今天到期' : days < 0 ? `逾期 ${Math.abs(days)} 天` : `${days} 天後`;
+    dateBadge = `<span class="meta-tag ${isOverdue ? 'overdue' : 'date'}">📅 ${formatDate(t.due)} ${label}</span>`;
+  }
+  const remindBadge = t.remind ? `<span class="meta-tag remind">🔔 提醒中</span>` : '';
+  const repeatBadge = t.repeat ? `<span class="meta-tag repeat">🔁 每${t.repeatDays}天</span>` : '';
+
+  return `<div class="todo-card" data-id="${t.id}">
+    <div class="cat-strip" style="background:${cm.color}"></div>
+    <div class="todo-card-inner">
+      <div class="todo-top">
+        <button class="check-btn" onclick="completeTodo('${t.id}')"></button>
+        <div class="todo-info">
+          <div class="todo-title">${t.title}</div>
+          <div class="todo-meta">
+            <span class="meta-tag cat" style="background:${cm.color}">${cm.label}</span>
+            ${dateBadge}${remindBadge}${repeatBadge}
+          </div>
+          ${t.note ? `<div style="font-size:12px;color:var(--sub);margin-top:6px;">${t.note}</div>` : ''}
+        </div>
+      </div>
+      <div class="todo-actions">
+        <button class="act-btn" onclick="editTodo('${t.id}')">✏️ 編輯</button>
+        <button class="act-btn" onclick="sendLineNow('${t.id}')">📤 LINE</button>
+        <button class="act-btn del" onclick="deleteTodo('${t.id}')">🗑 刪除</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderToday() {
+  const list = document.getElementById('todayList');
+  const t = today();
+  const items = todos.filter(td => !td.done && td.due && (td.due === t || daysUntil(td.due) <= 0));
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">☀️</div><div>今天沒有到期事項</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(td => todoCard(td)).join('');
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const items = [...history].sort((a,b) => b.completedAt.localeCompare(a.completedAt)).slice(0,50);
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">📝</div><div>還沒有完成紀錄</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(h => {
+    const cm = CAT_META[h.cat] || CAT_META.other;
+    const dt = new Date(h.completedAt);
+    return `<div class="hist-item">
+      <div class="hist-icon">${cm.label.split(' ')[0]}</div>
+      <div class="hist-info">
+        <div class="hist-title">${h.title}</div>
+        <div class="hist-time">${cm.label} · ${dt.toLocaleDateString('zh-TW')} ${dt.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ────────────────────────────────────────
+function completeTodo(id) {
+  const idx = todos.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const t = todos[idx];
+  history.push({ ...t, completedAt: new Date().toISOString() });
+
+  if (t.repeat && t.repeatDays) {
+    const next = new Date();
+    next.setDate(next.getDate() + t.repeatDays);
+    todos[idx] = { ...t, id: uid(), done: false, due: next.toISOString().split('T')[0] };
+    sendLine(`\n✅ 完成！\n「${t.title}」已完成\n下次排程：${formatDate(todos[idx].due)}`);
+  } else {
+    todos.splice(idx, 1);
+    sendLine(`\n✅ 完成！\n「${t.title}」已完成，太棒了！`);
+  }
+  save(); renderAll();
+}
+
+function deleteTodo(id) {
+  if (!confirm('確定刪除這個待辦嗎？')) return;
+  todos = todos.filter(t => t.id !== id);
+  save(); renderAll();
+}
+
+function editTodo(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  editId = id;
+  document.getElementById('modalTitle').textContent = '編輯待辦';
+  document.getElementById('fTitle').value = t.title;
+  document.getElementById('fNote').value = t.note || '';
+  document.getElementById('fDue').value = t.due || '';
+
+  document.querySelectorAll('.cat-opt').forEach(b => b.classList.toggle('sel', b.dataset.c === t.cat));
+
+  const repeatToggle = document.getElementById('toggleRepeat');
+  repeatToggle.className = 'toggle' + (t.repeat ? ' on' : '');
+  document.getElementById('repeatOpts').style.display = t.repeat ? 'block' : 'none';
+  document.querySelectorAll('.rep-opt[data-days]').forEach(b => {
+    b.classList.toggle('sel', parseInt(b.dataset.days) === t.repeatDays);
+  });
+
+  const remindToggle = document.getElementById('toggleRemind');
+  remindToggle.className = 'toggle' + (t.remind ? ' on' : '');
+  document.getElementById('remindOpts').style.display = t.remind ? 'block' : 'none';
+  document.querySelectorAll('.rep-opt[data-before]').forEach(b => {
+    b.classList.toggle('sel', parseInt(b.dataset.before) === (t.remindBefore ?? 0));
+  });
+
+  openModal('addModal');
+}
+
+async function sendLineNow(id) {
+  if (!lineSession) {
+    alert('請先設定 LINE 通知！點右上角「LINE 通知」按鈕');
+    return;
+  }
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  const cm = CAT_META[t.cat] || CAT_META.other;
+  await sendLine(`\n📌 待辦提醒\n「${t.title}」\n分類：${cm.label}${t.due ? `\n到期：${formatDate(t.due)}` : ''}`);
+  alert('已傳送至 LINE！');
+}
+
+// ── MODAL ──────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModalById(id) { document.getElementById(id).classList.remove('open'); }
+
+document.getElementById('addBtn').onclick = () => {
+  editId = null;
+  document.getElementById('modalTitle').textContent = '新增待辦';
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fNote').value = '';
+  document.getElementById('fDue').value = '';
+  document.querySelectorAll('.cat-opt').forEach((b,i) => b.classList.toggle('sel', i === 0));
+  document.getElementById('toggleRepeat').className = 'toggle';
+  document.getElementById('repeatOpts').style.display = 'none';
+  document.getElementById('toggleRemind').className = 'toggle';
+  document.getElementById('remindOpts').style.display = 'none';
+  document.querySelectorAll('.rep-opt[data-days]').forEach((b,i) => b.classList.toggle('sel', b.dataset.days === '3'));
+  document.querySelectorAll('.rep-opt[data-before]').forEach((b,i) => b.classList.toggle('sel', b.dataset.before === '0'));
+  openModal('addModal');
+};
+document.getElementById('closeModal').onclick = () => closeModalById('addModal');
+document.getElementById('addModal').onclick = e => { if (e.target === e.currentTarget) closeModalById('addModal'); };
+
+// Category select
+document.querySelectorAll('.cat-opt').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.cat-opt').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+  };
+});
+
+// Toggles
+document.getElementById('toggleRepeat').onclick = function() {
+  this.classList.toggle('on');
+  document.getElementById('repeatOpts').style.display = this.classList.contains('on') ? 'block' : 'none';
+};
+document.getElementById('toggleRemind').onclick = function() {
+  this.classList.toggle('on');
+  document.getElementById('remindOpts').style.display = this.classList.contains('on') ? 'block' : 'none';
+};
+
+// Repeat options
+document.querySelectorAll('.rep-opt[data-days]').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.rep-opt[data-days]').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    document.getElementById('fCustomDays').style.display = b.dataset.days === 'custom' ? 'block' : 'none';
+  };
+});
+document.querySelectorAll('.rep-opt[data-before]').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.rep-opt[data-before]').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+  };
+});
+
+// Save
+document.getElementById('saveBtn').onclick = () => {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) { alert('請輸入事項名稱'); return; }
+  const cat = document.querySelector('.cat-opt.sel')?.dataset.c || 'other';
+  const due = document.getElementById('fDue').value;
+  const note = document.getElementById('fNote').value.trim();
+  const repeat = document.getElementById('toggleRepeat').classList.contains('on');
+  const remind = document.getElementById('toggleRemind').classList.contains('on');
+
+  let repeatDays = 3;
+  const selRepOpt = document.querySelector('.rep-opt[data-days].sel');
+  if (selRepOpt) {
+    if (selRepOpt.dataset.days === 'custom') {
+      repeatDays = parseInt(document.getElementById('fCustomDays').value) || 3;
+    } else {
+      repeatDays = parseInt(selRepOpt.dataset.days);
+    }
+  }
+  const remindBefore = parseInt(document.querySelector('.rep-opt[data-before].sel')?.dataset.before ?? '0');
+
+  const item = { id: editId || uid(), title, cat, due, note, repeat, repeatDays, remind, remindBefore, done: false };
+
+  if (editId) {
+    const idx = todos.findIndex(t => t.id === editId);
+    if (idx !== -1) todos[idx] = item;
+  } else {
+    todos.push(item);
+    if (remind && lineSession) {
+      sendLine(`\n📝 新增待辦\n「${title}」${due ? `\n到期日：${formatDate(due)}` : ''}\n${CAT_META[cat]?.label}`);
+    }
+  }
+  save(); renderAll();
+  closeModalById('addModal');
+};
+
+// ── TABS ───────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentTab = b.dataset.tab;
+    ['todos','today','history'].forEach(t => {
+      document.getElementById(`tab-${t}`).style.display = t === currentTab ? 'block' : 'none';
+    });
+    renderAll();
+  };
+});
+
+// ── FILTER ─────────────────────────────────────────
+document.querySelectorAll('.cat-pill').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.cat-pill').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentFilter = b.dataset.cat;
+    renderTodos();
+  };
+});
+
+// ── LINE MODAL ─────────────────────────────────────
+document.getElementById('lineSetupBtn').onclick = () => {
+  document.getElementById('lineAddFriendUrl').textContent = LINE_ADD_FRIEND_URL;
+  document.getElementById('bindCodeBox').style.display = 'none';
+  document.getElementById('genCodeBtn').style.display = 'inline-block';
+  document.getElementById('genCodeBtn').textContent = '產生綁定碼';
+  document.getElementById('checkBindBtn').style.display = 'none';
+  document.getElementById('lineStatus').textContent = lineSession ? '✅ 已連結 LINE 通知' : '';
+  document.getElementById('lineStatus').style.color = '#22c55e';
+  openModal('lineModal');
+};
+document.getElementById('closeLineModal').onclick = () => closeModalById('lineModal');
+document.getElementById('lineModal').onclick = e => { if (e.target === e.currentTarget) closeModalById('lineModal'); };
+
+document.getElementById('genCodeBtn').onclick = async () => {
+  const btn = document.getElementById('genCodeBtn');
+  btn.textContent = '產生中...';
+  try {
+    const res = await fetch(`${WORKER_URL}/bind/start`, { method: 'POST' });
+    const data = await res.json();
+    pendingBindCode = data.code;
+    document.getElementById('bindCodeText').textContent = data.code;
+    document.getElementById('bindCodeBox').style.display = 'block';
+    document.getElementById('checkBindBtn').style.display = 'inline-block';
+    document.getElementById('lineStatus').textContent = '請把上面的數字傳送給 LINE Bot，傳送後按「檢查連結狀態」';
+    document.getElementById('lineStatus').style.color = 'var(--sub)';
+    btn.textContent = '重新產生';
+  } catch(e) {
+    document.getElementById('lineStatus').textContent = '❌ 產生綁定碼失敗，請確認網路連線';
+    document.getElementById('lineStatus').style.color = '#ef4444';
+    btn.textContent = '產生綁定碼';
+  }
+};
+
+document.getElementById('checkBindBtn').onclick = async () => {
+  if (!pendingBindCode) return;
+  const btn = document.getElementById('checkBindBtn');
+  btn.textContent = '檢查中...';
+  try {
+    const res = await fetch(`${WORKER_URL}/bind/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: pendingBindCode })
+    });
+    const data = await res.json();
+    if (data.status === 'bound') {
+      lineSession = data.sessionToken;
+      localStorage.setItem('lineSession', lineSession);
+      document.getElementById('lineStatus').innerHTML = '✅ 連結成功！之後提醒通知會傳到你的 LINE';
+      document.getElementById('lineStatus').style.color = '#22c55e';
+      document.getElementById('lineSetupBtn').style.background = '#06c755';
+      sendLine('\n🎉 待辦助理已連結！\n你的提醒通知會傳到這裡 👍');
+    } else if (data.status === 'pending') {
+      document.getElementById('lineStatus').textContent = '⏳ 還沒收到，請確認已在 LINE 傳送綁定碼給 Bot';
+      document.getElementById('lineStatus').style.color = '#d97706';
+    } else {
+      document.getElementById('lineStatus').textContent = '❌ 綁定碼已過期，請重新產生';
+      document.getElementById('lineStatus').style.color = '#ef4444';
+    }
+  } catch(e) {
+    document.getElementById('lineStatus').textContent = '❌ 檢查失敗，請確認網路連線';
+    document.getElementById('lineStatus').style.color = '#ef4444';
+  }
+  btn.textContent = '檢查連結狀態';
+};
+
+function copyText(t) {
+  navigator.clipboard.writeText(t).then(() => alert('已複製！'));
+}
+
+// ── INIT ───────────────────────────────────────────
+if (lineSession) {
+  document.getElementById('lineSetupBtn').style.background = '#06c755';
+} else {
+  document.getElementById('lineSetupBtn').style.background = '#999';
+}
+
+// Add sample data if empty
+if (!todos.length) {
+  todos = [
+    { id: uid(), title: '回覆客戶提案', cat: 'work', due: today(), note: '需要附上報價單', repeat: false, repeatDays: 7, remind: true, remindBefore: 0, done: false },
+    { id: uid(), title: '定期回診', cat: 'medical', due: new Date(Date.now()+7*86400000).toISOString().split('T')[0], note: '台大醫院 9F', repeat: true, repeatDays: 30, remind: true, remindBefore: 3, done: false },
+    { id: uid(), title: '買衛生紙、洗碗精', cat: 'shop', due: '', note: '', repeat: false, repeatDays: 7, remind: false, remindBefore: 0, done: false },
+    { id: uid(), title: '計畫週年旅遊', cat: 'love', due: new Date(Date.now()+14*86400000).toISOString().split('T')[0], note: '預計去花蓮', repeat: false, repeatDays: 7, remind: true, remindBefore: 7, done: false },
+  ];
+  save();
+}
+
+checkReminders();
+renderAll();
+
+// Check reminders every hour
+setInterval(checkReminders, 3600000);
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.warn('SW failed', e));
+  });
+}
+</script>
+</body>
+</html>
