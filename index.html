@@ -441,6 +441,8 @@
           <button class="rep-opt" data-before="3">前3天</button>
           <button class="rep-opt" data-before="7">前1週</button>
         </div>
+        <label style="margin-top:10px;">提醒時間</label>
+        <input type="time" id="fRemindTime" value="09:00" style="width:140px;">
       </div>
     </div>
 
@@ -557,11 +559,15 @@ async function sendLine(message) {
 
 function checkReminders() {
   const t = today();
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   todos.filter(td => !td.done && td.remind && td.due).forEach(td => {
     const days = daysUntil(td.due);
     const notifyDays = td.remindBefore ?? 0;
+    const [rh, rm] = (td.remindTime || '09:00').split(':').map(Number);
+    const remindMinutes = rh * 60 + rm;
     const key = `notified_${td.id}_${td.due}`;
-    if (days === notifyDays && !localStorage.getItem(key)) {
+    if (days === notifyDays && nowMinutes >= remindMinutes && !localStorage.getItem(key)) {
       const msg = days === 0
         ? `\n⏰ 【待辦提醒】\n「${td.title}」今天到期！\n分類：${CAT_META[td.cat]?.label}\n記得完成喔！`
         : `\n📅 【待辦提醒】\n「${td.title}」還有 ${days} 天到期\n分類：${CAT_META[td.cat]?.label}\n到期日：${formatDate(td.due)}`;
@@ -615,7 +621,7 @@ function todoCard(t) {
     const label = days === 0 ? '今天到期' : days < 0 ? `逾期 ${Math.abs(days)} 天` : `${days} 天後`;
     dateBadge = `<span class="meta-tag ${isOverdue ? 'overdue' : 'date'}">📅 ${formatDate(t.due)} ${label}</span>`;
   }
-  const remindBadge = t.remind ? `<span class="meta-tag remind">🔔 提醒中</span>` : '';
+  const remindBadge = t.remind ? `<span class="meta-tag remind">🔔 ${t.remindTime || '09:00'}</span>` : '';
   const repeatBadge = t.repeat ? `<span class="meta-tag repeat">🔁 每${t.repeatDays}天</span>` : '';
 
   return `<div class="todo-card" data-id="${t.id}">
@@ -718,6 +724,7 @@ function editTodo(id) {
   const remindToggle = document.getElementById('toggleRemind');
   remindToggle.className = 'toggle' + (t.remind ? ' on' : '');
   document.getElementById('remindOpts').style.display = t.remind ? 'block' : 'none';
+  document.getElementById('fRemindTime').value = t.remindTime || '09:00';
   document.querySelectorAll('.rep-opt[data-before]').forEach(b => {
     b.classList.toggle('sel', parseInt(b.dataset.before) === (t.remindBefore ?? 0));
   });
@@ -754,6 +761,7 @@ document.getElementById('addBtn').onclick = () => {
   document.getElementById('remindOpts').style.display = 'none';
   document.querySelectorAll('.rep-opt[data-days]').forEach((b,i) => b.classList.toggle('sel', b.dataset.days === '3'));
   document.querySelectorAll('.rep-opt[data-before]').forEach((b,i) => b.classList.toggle('sel', b.dataset.before === '0'));
+  document.getElementById('fRemindTime').value = '09:00';
   openModal('addModal');
 };
 document.getElementById('closeModal').onclick = () => closeModalById('addModal');
@@ -812,8 +820,9 @@ document.getElementById('saveBtn').onclick = () => {
     }
   }
   const remindBefore = parseInt(document.querySelector('.rep-opt[data-before].sel')?.dataset.before ?? '0');
+  const remindTime = document.getElementById('fRemindTime').value || '09:00';
 
-  const item = { id: editId || uid(), title, cat, due, note, repeat, repeatDays, remind, remindBefore, done: false };
+  const item = { id: editId || uid(), title, cat, due, note, repeat, repeatDays, remind, remindBefore, remindTime, done: false };
 
   if (editId) {
     const idx = todos.findIndex(t => t.id === editId);
@@ -931,10 +940,10 @@ if (lineSession) {
 // Add sample data if empty
 if (!todos.length) {
   todos = [
-    { id: uid(), title: '回覆客戶提案', cat: 'work', due: today(), note: '需要附上報價單', repeat: false, repeatDays: 7, remind: true, remindBefore: 0, done: false },
-    { id: uid(), title: '定期回診', cat: 'medical', due: new Date(Date.now()+7*86400000).toISOString().split('T')[0], note: '台大醫院 9F', repeat: true, repeatDays: 30, remind: true, remindBefore: 3, done: false },
-    { id: uid(), title: '買衛生紙、洗碗精', cat: 'shop', due: '', note: '', repeat: false, repeatDays: 7, remind: false, remindBefore: 0, done: false },
-    { id: uid(), title: '計畫週年旅遊', cat: 'love', due: new Date(Date.now()+14*86400000).toISOString().split('T')[0], note: '預計去花蓮', repeat: false, repeatDays: 7, remind: true, remindBefore: 7, done: false },
+    { id: uid(), title: '回覆客戶提案', cat: 'work', due: today(), note: '需要附上報價單', repeat: false, repeatDays: 7, remind: true, remindBefore: 0, remindTime: '09:00', done: false },
+    { id: uid(), title: '定期回診', cat: 'medical', due: new Date(Date.now()+7*86400000).toISOString().split('T')[0], note: '台大醫院 9F', repeat: true, repeatDays: 30, remind: true, remindBefore: 3, remindTime: '09:00', done: false },
+    { id: uid(), title: '買衛生紙、洗碗精', cat: 'shop', due: '', note: '', repeat: false, repeatDays: 7, remind: false, remindBefore: 0, remindTime: '09:00', done: false },
+    { id: uid(), title: '計畫週年旅遊', cat: 'love', due: new Date(Date.now()+14*86400000).toISOString().split('T')[0], note: '預計去花蓮', repeat: false, repeatDays: 7, remind: true, remindBefore: 7, remindTime: '09:00', done: false },
   ];
   save();
 }
