@@ -1,4 +1,4 @@
-const CACHE = 'todo-pwa-v1';
+const CACHE = 'todo-pwa-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -22,7 +22,21 @@ self.addEventListener('activate', e => {
   );
 });
 
+// 網頁本體（HTML）一律先嘗試連網抓最新版，離線時才退回快取；其他靜態資源（圖示、字型）維持快取優先
 self.addEventListener('fetch', e => {
+  const isPage = e.request.mode === 'navigate' || e.request.destination === 'document';
+  if (isPage) {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+          return resp;
+        })
+        .catch(() => caches.match(e.request).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('./index.html')))
   );

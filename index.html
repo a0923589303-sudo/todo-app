@@ -532,6 +532,7 @@ const CAT_META = {
 function save() {
   localStorage.setItem('todos', JSON.stringify(todos));
   localStorage.setItem('history', JSON.stringify(history));
+  syncTodos();
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function today() { return new Date().toISOString().split('T')[0]; }
@@ -557,24 +558,16 @@ async function sendLine(message) {
   } catch(e) { console.warn('LINE push failed', e); }
 }
 
-function checkReminders() {
-  const t = today();
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  todos.filter(td => !td.done && td.remind && td.due).forEach(td => {
-    const days = daysUntil(td.due);
-    const notifyDays = td.remindBefore ?? 0;
-    const [rh, rm] = (td.remindTime || '09:00').split(':').map(Number);
-    const remindMinutes = rh * 60 + rm;
-    const key = `notified_${td.id}_${td.due}`;
-    if (days === notifyDays && nowMinutes >= remindMinutes && !localStorage.getItem(key)) {
-      const msg = days === 0
-        ? `\n⏰ 【待辦提醒】\n「${td.title}」今天到期！\n分類：${CAT_META[td.cat]?.label}\n記得完成喔！`
-        : `\n📅 【待辦提醒】\n「${td.title}」還有 ${days} 天到期\n分類：${CAT_META[td.cat]?.label}\n到期日：${formatDate(td.due)}`;
-      sendLine(msg);
-      localStorage.setItem(key, '1');
-    }
-  });
+// 把待辦事項同步到 Cloudflare，讓伺服器背景排程能在時間到時主動推播（不需要開著 App）
+async function syncTodos() {
+  if (!lineSession) return;
+  try {
+    await fetch(`${WORKER_URL}/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionToken: lineSession, todos })
+    });
+  } catch(e) { console.warn('Todo sync failed', e); }
 }
 
 // ── RENDER ─────────────────────────────────────────
@@ -912,6 +905,7 @@ document.getElementById('checkBindBtn').onclick = async () => {
       document.getElementById('lineStatus').style.color = '#22c55e';
       document.getElementById('lineSetupBtn').style.background = '#06c755';
       sendLine('\n🎉 待辦助理已連結！\n你的提醒通知會傳到這裡 👍');
+      syncTodos();
     } else if (data.status === 'pending') {
       document.getElementById('lineStatus').textContent = '⏳ 還沒收到，請確認已在 LINE 傳送綁定碼給 Bot';
       document.getElementById('lineStatus').style.color = '#d97706';
@@ -948,11 +942,8 @@ if (!todos.length) {
   save();
 }
 
-checkReminders();
 renderAll();
-
-// Check reminders every hour
-setInterval(checkReminders, 3600000);
+syncTodos();
 </script>
 
 <script>
