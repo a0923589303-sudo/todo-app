@@ -633,6 +633,7 @@ function todoCard(t) {
       </div>
       <div class="todo-actions">
         <button class="act-btn" onclick="editTodo('${t.id}')">✏️ 編輯</button>
+        ${t.due ? `<button class="act-btn" onclick="postponeTodo('${t.id}')">⏭ 延到明天</button>` : ''}
         <button class="act-btn" onclick="sendLineNow('${t.id}')">📤 LINE</button>
         <button class="act-btn del" onclick="deleteTodo('${t.id}')">🗑 刪除</button>
       </div>
@@ -690,6 +691,15 @@ function completeTodo(id) {
   save(); renderAll();
 }
 
+function postponeTodo(id) {
+  const idx = todos.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const next = new Date(today());
+  next.setDate(next.getDate() + 1);
+  todos[idx].due = next.toISOString().split('T')[0];
+  save(); renderAll();
+}
+
 function deleteTodo(id) {
   if (!confirm('確定刪除這個待辦嗎？')) return;
   todos = todos.filter(t => t.id !== id);
@@ -733,7 +743,7 @@ async function sendLineNow(id) {
   const t = todos.find(x => x.id === id);
   if (!t) return;
   const cm = CAT_META[t.cat] || CAT_META.other;
-  await sendLine(`\n📌 待辦提醒\n「${t.title}」\n分類：${cm.label}${t.due ? `\n到期：${formatDate(t.due)}` : ''}`);
+  await sendLine(`\n📌 待辦提醒\n「${t.title}」\n分類：${cm.label}${t.due ? `\n到期：${formatDate(t.due)}` : ''}${t.note ? `\n備註：${t.note}` : ''}`);
   alert('已傳送至 LINE！');
 }
 
@@ -823,7 +833,7 @@ document.getElementById('saveBtn').onclick = () => {
   } else {
     todos.push(item);
     if (remind && lineSession) {
-      sendLine(`\n📝 新增待辦\n「${title}」${due ? `\n到期日：${formatDate(due)}` : ''}\n${CAT_META[cat]?.label}`);
+      sendLine(`\n📝 新增待辦\n「${title}」${due ? `\n到期日：${formatDate(due)}` : ''}\n${CAT_META[cat]?.label}${note ? `\n備註：${note}` : ''}`);
     }
   }
   save(); renderAll();
