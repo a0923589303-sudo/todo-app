@@ -18,20 +18,22 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
   :root {
-    --bg: #f0f2f7;
-    --card: #ffffff;
+    --bg: #eef1fb;
+    --card: #fffdf7;
     --navy: #1a2332;
     --navy-light: #2d3f57;
-    --coral: #ff6b4a;
+    --coral: #ff5a3c;
     --coral-light: #fff0ec;
+    --coral-dark: #e8431f;
+    --gold: #ffb800;
     --text: #1a2332;
     --sub: #7a8499;
     --border: #e4e8f0;
-    --cat-work: #3b82f6;
-    --cat-medical: #22c55e;
-    --cat-shop: #a855f7;
-    --cat-love: #f43f5e;
-    --cat-other: #f59e0b;
+    --cat-work: #ffb800;
+    --cat-medical: #fb5607;
+    --cat-shop: #16c172;
+    --cat-love: #ff3d71;
+    --cat-other: #0ea5e9;
     --shadow: 0 2px 12px rgba(26,35,50,0.08);
     --shadow-lg: 0 8px 30px rgba(26,35,50,0.14);
   }
@@ -66,6 +68,44 @@
   }
   .line-badge:hover { opacity: 0.85; }
   .line-badge svg { width: 16px; height: 16px; }
+
+  /* LEVEL BAR */
+  .level-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .level-badge {
+    background: var(--gold); color: var(--navy); font-weight: 700; font-size: 12px;
+    padding: 4px 10px; border-radius: 20px; flex-shrink: 0;
+    box-shadow: 0 2px 0 #c98f00;
+  }
+  .level-badge.pulse { animation: statPulse 0.5s ease; }
+  .xp-track { flex: 1; height: 10px; background: rgba(255,255,255,0.15); border-radius: 6px; overflow: hidden; }
+  .xp-fill {
+    height: 100%; background: linear-gradient(90deg, var(--gold), var(--coral));
+    border-radius: 6px; transition: width 0.5s ease;
+  }
+  .xp-text { font-size: 11px; color: rgba(255,255,255,0.7); flex-shrink: 0; }
+
+  /* CELEBRATION */
+  .confetti-piece {
+    position: fixed; width: 8px; height: 8px; pointer-events: none; z-index: 500;
+    border-radius: 2px; animation: confettiBurst 0.7s ease-out forwards;
+  }
+  @keyframes confettiBurst {
+    0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  }
+  .xp-toast {
+    position: fixed; left: 50%; top: 38%; transform: translate(-50%, 0);
+    background: var(--navy); color: white; padding: 10px 20px; border-radius: 20px;
+    font-weight: 700; font-size: 15px; z-index: 500; box-shadow: var(--shadow-lg);
+    animation: toastPop 1.4s ease forwards; pointer-events: none; white-space: nowrap;
+  }
+  @keyframes toastPop {
+    0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
+    25% { transform: translate(-50%, 0) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -20px) scale(1); }
+  }
 
   /* NAV TABS */
   .nav-tabs {
@@ -106,41 +146,56 @@
     margin-bottom: 16px;
   }
   .stat-card {
-    background: var(--card); border-radius: 14px; padding: 14px 12px;
+    background: var(--card); border-radius: 20px; padding: 14px 12px;
     box-shadow: var(--shadow); text-align: center;
+    border: 2px solid var(--border); transition: transform 0.15s;
   }
   .stat-num { font-size: 26px; font-weight: 700; }
   .stat-label { font-size: 11px; color: var(--sub); margin-top: 2px; }
   .stat-card.urgent .stat-num { color: var(--coral); }
-  .stat-card.done .stat-num { color: var(--cat-medical); }
+  .stat-card.done .stat-num { color: var(--cat-shop); }
+  .stat-card.done.pulse { animation: statPulse 0.5s ease; }
+  @keyframes statPulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
 
   /* TODO CARD */
   .todo-card {
-    background: var(--card); border-radius: 16px; padding: 16px;
-    box-shadow: var(--shadow); margin-bottom: 10px;
+    background: var(--card); border-radius: 22px; padding: 16px;
+    box-shadow: var(--shadow); margin-bottom: 12px;
     transition: all 0.2s; position: relative; overflow: hidden;
+    border: 2px solid var(--border);
   }
-  .todo-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .todo-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
   .todo-card.done-item { opacity: 0.55; }
+  .todo-card.just-completed { animation: cardComplete 0.4s ease; }
+  @keyframes cardComplete {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
   .cat-strip {
-    position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px;
+    position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 6px 0 0 6px;
   }
   .todo-card-inner { padding-left: 8px; }
   .todo-top { display: flex; align-items: flex-start; gap: 10px; }
   .check-btn {
-    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+    width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--border);
     background: none; cursor: pointer; flex-shrink: 0; margin-top: 1px;
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
+    transition: transform 0.12s, background 0.2s, border-color 0.2s;
   }
-  .check-btn.checked { background: var(--cat-medical); border-color: var(--cat-medical); }
-  .check-btn.checked::after { content: '✓'; color: white; font-size: 12px; }
+  .check-btn:active { transform: scale(0.82); }
+  .check-btn.checked { background: var(--cat-shop); border-color: var(--cat-shop); }
+  .check-btn.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: 700; }
   .todo-info { flex: 1; }
   .todo-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
   .todo-title.striked { text-decoration: line-through; color: var(--sub); }
   .todo-meta { display: flex; flex-wrap: wrap; gap: 6px; }
   .meta-tag {
-    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500;
     display: flex; align-items: center; gap: 3px;
   }
   .meta-tag.cat { color: white; }
@@ -148,13 +203,15 @@
   .meta-tag.overdue { background: #fef2f2; color: #ef4444; }
   .meta-tag.remind { background: #fffbeb; color: #d97706; }
   .meta-tag.repeat { background: #eff6ff; color: #3b82f6; }
-  .todo-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .todo-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .act-btn {
-    background: var(--bg); border: none; border-radius: 8px;
-    padding: 5px 10px; font-size: 12px; cursor: pointer;
-    font-family: inherit; color: var(--sub); transition: all 0.15s;
+    background: var(--bg); border: none; border-radius: 12px;
+    padding: 6px 12px; font-size: 12px; cursor: pointer;
+    font-family: inherit; color: var(--sub); font-weight: 500;
+    transition: transform 0.12s, background 0.15s, color 0.15s;
   }
   .act-btn:hover { background: var(--border); color: var(--text); }
+  .act-btn:active { transform: scale(0.92); }
   .act-btn.del:hover { background: #fef2f2; color: #ef4444; }
 
   /* EMPTY STATE */
@@ -167,13 +224,15 @@
   /* FAB */
   .fab {
     position: fixed; bottom: 28px; right: 20px;
-    width: 56px; height: 56px; border-radius: 28px;
+    width: 58px; height: 58px; border-radius: 29px;
     background: var(--coral); color: white; border: none;
-    font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(255,107,74,0.4);
-    transition: all 0.2s; z-index: 200;
+    font-size: 28px; cursor: pointer;
+    box-shadow: 0 4px 0 var(--coral-dark), 0 8px 22px rgba(255,90,60,0.4);
+    transition: transform 0.12s, box-shadow 0.12s; z-index: 200;
     display: flex; align-items: center; justify-content: center;
   }
-  .fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(255,107,74,0.5); }
+  .fab:hover { transform: translateY(-2px); }
+  .fab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--coral-dark), 0 4px 10px rgba(255,90,60,0.4); }
 
   /* MODAL OVERLAY */
   .modal-overlay {
@@ -252,10 +311,12 @@
 
   .save-btn {
     width: 100%; padding: 14px; background: var(--coral); color: white;
-    border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: all 0.2s; margin-top: 8px;
+    border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit; margin-top: 8px;
+    box-shadow: 0 4px 0 var(--coral-dark);
+    transition: transform 0.12s, box-shadow 0.12s;
   }
-  .save-btn:hover { background: #ff5533; }
+  .save-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--coral-dark); }
 
   /* LINE MODAL */
   .line-modal-body { padding: 4px 0; }
@@ -321,6 +382,11 @@
       <svg viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
       LINE 通知
     </button>
+  </div>
+  <div class="level-bar">
+    <span class="level-badge" id="levelBadge">Lv.1</span>
+    <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+    <span class="xp-text" id="xpText">0/100 XP</span>
   </div>
   <div class="nav-tabs">
     <button class="tab-btn active" data-tab="todos">待辦清單</button>
@@ -514,6 +580,7 @@ const LINE_ADD_FRIEND_URL = 'https://line.me/R/ti/p/@268mcsdh';
 // ── STATE ──────────────────────────────────────────
 let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 let history = JSON.parse(localStorage.getItem('history') || '[]');
+let xp = parseInt(localStorage.getItem('xp') || '0');
 let lineSession = localStorage.getItem('lineSession') || '';
 let pendingBindCode = '';
 let editId = null;
@@ -521,11 +588,11 @@ let currentFilter = 'all';
 let currentTab = 'todos';
 
 const CAT_META = {
-  work:    { label:'⚡ 工作', color:'var(--cat-work)' },
-  medical: { label:'🔥 看診', color:'var(--cat-medical)' },
-  shop:    { label:'🍀 購物', color:'var(--cat-shop)' },
-  love:    { label:'💕 感情', color:'var(--cat-love)' },
-  other:   { label:'💧 其他', color:'var(--cat-other)' },
+  work:    { label:'⚡ 工作', color:'var(--cat-work)',    bg:'#fff6dc' },
+  medical: { label:'🔥 看診', color:'var(--cat-medical)', bg:'#ffe9dd' },
+  shop:    { label:'🍀 購物', color:'var(--cat-shop)',    bg:'#dcf9ec' },
+  love:    { label:'💕 感情', color:'var(--cat-love)',    bg:'#ffe1eb' },
+  other:   { label:'💧 其他', color:'var(--cat-other)',   bg:'#dcf1fc' },
 };
 
 // ── HELPERS ────────────────────────────────────────
@@ -544,6 +611,60 @@ function formatDate(d) {
   if (!d) return '';
   const [y,m,day] = d.split('-');
   return `${m}/${day}`;
+}
+
+// ── GAMIFICATION ───────────────────────────────────
+function levelFromXp(x) { return Math.floor(x / 100) + 1; }
+
+function updateLevelUI() {
+  const level = levelFromXp(xp);
+  const xpInLevel = xp % 100;
+  document.getElementById('levelBadge').textContent = `Lv.${level}`;
+  document.getElementById('xpFill').style.width = xpInLevel + '%';
+  document.getElementById('xpText').textContent = `${xpInLevel}/100 XP`;
+}
+
+function addXp(amount) {
+  const before = levelFromXp(xp);
+  xp += amount;
+  localStorage.setItem('xp', xp);
+  const after = levelFromXp(xp);
+  updateLevelUI();
+  const badge = document.getElementById('levelBadge');
+  badge.classList.remove('pulse'); void badge.offsetWidth; badge.classList.add('pulse');
+  return after > before;
+}
+
+function spawnConfetti(x, y) {
+  const colors = ['#ffb800', '#ff5a3c', '#16c172', '#0ea5e9', '#ff3d71'];
+  for (let i = 0; i < 14; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 40 + Math.random() * 60;
+    piece.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    piece.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    piece.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    piece.style.background = colors[i % colors.length];
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 700);
+  }
+}
+
+function showXpToast(text) {
+  const toast = document.createElement('div');
+  toast.className = 'xp-toast';
+  toast.textContent = text;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 1400);
+}
+
+function celebrate(originEl, leveledUp) {
+  const rect = originEl.getBoundingClientRect();
+  spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  showXpToast(leveledUp ? '🎉 升級了！+10 XP' : '✨ 太棒了！+10 XP');
 }
 
 // ── LINE BOT ───────────────────────────────────────
@@ -617,7 +738,7 @@ function todoCard(t) {
   const remindBadge = t.remind ? `<span class="meta-tag remind">🔔 ${t.remindTime || '09:00'}</span>` : '';
   const repeatBadge = t.repeat ? `<span class="meta-tag repeat">🔁 每${t.repeatDays}天</span>` : '';
 
-  return `<div class="todo-card" data-id="${t.id}">
+  return `<div class="todo-card" data-id="${t.id}" style="background:${cm.bg}">
     <div class="cat-strip" style="background:${cm.color}"></div>
     <div class="todo-card-inner">
       <div class="todo-top">
@@ -678,6 +799,12 @@ function completeTodo(id) {
   if (idx === -1) return;
   const t = todos[idx];
   history.push({ ...t, completedAt: new Date().toISOString() });
+
+  const btnEl = document.querySelector(`.todo-card[data-id="${id}"] .check-btn`);
+  const leveledUp = addXp(10);
+  if (btnEl) celebrate(btnEl, leveledUp);
+  const doneStat = document.getElementById('statDone')?.closest('.stat-card');
+  if (doneStat) { doneStat.classList.remove('pulse'); void doneStat.offsetWidth; doneStat.classList.add('pulse'); }
 
   if (t.repeat && t.repeatDays) {
     const next = new Date();
@@ -953,6 +1080,7 @@ if (!todos.length) {
 }
 
 renderAll();
+updateLevelUI();
 syncTodos();
 </script>
 
