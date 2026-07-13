@@ -4,8 +4,8 @@
   "description": "你的個人待辦提醒助理，支援分類、排程與 LINE 通知",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1a2332",
-  "theme_color": "#1a2332",
+  "background_color": "#3c6e8a",
+  "theme_color": "#3c6e8a",
   "orientation": "portrait",
   "lang": "zh-TW",
   "icons": [
